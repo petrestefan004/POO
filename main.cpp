@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <unordered_map>
+#include <memory>
 
 class User {
 private:
@@ -12,7 +13,18 @@ public:
     User() = default;
     User(const std::string& usern) : username(usern) {}
     User(const std::string& pass, const std::string& usern) : password(pass), username(usern) {}
+    User(const User& other) : password(other.password), username(other.username) {}
+    User& operator=(const User& other) {
+        if (this != &other) {
+            password = other.password;
+            username = other.username;
+        }
+        return *this;
+    }
     virtual ~User() = default;
+
+    std::string getUsername() const { return username; }
+    void setPassword(const std::string& pass) { password = pass; }
 
     friend std::ostream& operator<<(std::ostream& os, const User& user) {
         os << "Username: " << user.username;
@@ -36,26 +48,26 @@ private:
     std::vector<std::string> videos;
     std::string channelName;
 protected:
-    User owner;
+    std::shared_ptr<User> owner;
 public:
-    Channel(const std::string& channelName, const std::string& ownerName) : owner(ownerName), channelName(channelName), subCount(0) {}
-
-    virtual ~Channel() = default;
-
-    friend std::ostream& operator<<(std::ostream& os, const Channel& channel) {
-        os << "Numele canalului: " << channel.channelName << '\n';
-        os << "Numarul de abonati: " << channel.subCount << '\n';
-        os << "Owner: " << channel.owner;
-        return os;
-    }
+    Channel(const std::string& channelName, std::shared_ptr<User> ownerPtr) : owner(ownerPtr), channelName(channelName), subCount(0) {}
+    Channel(const Channel& other) : subCount(other.subCount), videos(other.videos), channelName(other.channelName), owner(other.owner) {}
     Channel& operator=(const Channel& other) {
         if (this != &other) {
+            subCount = other.subCount;
+            videos = other.videos;
             channelName = other.channelName;
-            subCount = 0;
-            videos = {};
             owner = other.owner;
         }
         return *this;
+    }
+    virtual ~Channel() = default;
+
+    friend std::ostream& operator<<(std::ostream& os, const Channel& channel) {
+        os << "Channel Name: " << channel.channelName << '\n';
+        os << "Subscriber Count: " << channel.subCount << '\n';
+        os << "Owner: " << *(channel.owner);
+        return os;
     }
 
     void subscribe() {
@@ -73,7 +85,7 @@ public:
 
     void setChannelName(const std::string& ownerName) {
         if (channelName.empty()) {
-            std::cout << ownerName << "Alege un nume pentru canal\n";
+            std::cout << ownerName << ", choose a name for the channel: ";
             std::cin >> channelName;
         }
     }
@@ -83,18 +95,8 @@ class MusicChannel : public Channel {
 private:
     std::string musicLabel;
 public:
-    MusicChannel(const std::string& channelName, const std::string& ownerName) : Channel(channelName, ownerName), musicLabel("") {}
-
-    void getLabel() {
-        std::cout << "Music Label: " << musicLabel << '\n';
-    }
-
-    void setLabel(const std::string& label) {
-        if (musicLabel.empty())
-            musicLabel = label;
-        else
-            return;
-    }
+    MusicChannel(const std::string& channelName, std::shared_ptr<User> ownerPtr) : Channel(channelName, ownerPtr), musicLabel("") {}
+    MusicChannel(const MusicChannel& other) : Channel(other), musicLabel(other.musicLabel) {}
     MusicChannel& operator=(const MusicChannel& other) {
         if (this != &other) {
             Channel::operator=(other);
@@ -102,52 +104,54 @@ public:
         }
         return *this;
     }
+    std::string getLabel() const { return musicLabel; }
+    void setLabel(const std::string& label) { if (musicLabel.empty()) musicLabel = label; }
+
+    friend std::ostream& operator<<(std::ostream& os, const MusicChannel& channel) {
+        os << static_cast<const Channel&>(channel) << '\n';
+        os << "Music Label: " << channel.musicLabel << '\n';
+        return os;
+    }
 };
 
 class App {
 private:
-    std::vector<User*> users;
-    std::vector<Channel*> channels;
+    std::vector<std::shared_ptr<User>> users; // Using shared_ptr for ownership
+    std::vector<std::shared_ptr<Channel>> channels; // Using shared_ptr for ownership
 public:
-    ~App() {
-        for (auto user : users)
-            delete user;
-        for (auto channel : channels)
-            delete channel;
-    }
+    ~App() = default;
 
-    void addUser(User* user) {
+    void addUser(std::shared_ptr<User> user) {
         users.push_back(user);
     }
 
-    void addChannel(Channel* channel) {
+    void addChannel(std::shared_ptr<Channel> channel) {
         channels.push_back(channel);
     }
 };
 
 int main() {
     App ytApp;
-    User* user1 = new User("stefan");
-    User* user2 = new User("dragonuak47");
+    std::shared_ptr<User> user1 = std::make_shared<User>("stefan");
+    std::shared_ptr<User> user2 = std::make_shared<User>("dragonuak47");
 
     ytApp.addUser(user1);
     ytApp.addUser(user2);
 
-    Channel* channel1 = new Channel("stefanpetre", "eu");
-    Channel* channel2 = new MusicChannel("Specii", "dragos");
+    std::shared_ptr<Channel> channel1 = std::make_shared<Channel>("stefanpetre", user1);
+    std::shared_ptr<Channel> channel2 = std::make_shared<MusicChannel>("Specii", user2);
 
     ytApp.addChannel(channel1);
     ytApp.addChannel(channel2);
 
-
-    std::cout << "Informatia userului:\n" << *user1 << "\n\n";
-    std::cout << "Informatia canalului:\n" << *channel1 << "\n";
+    std::cout << "User Information:\n" << *user1 << "\n\n";
+    std::cout << "Channel Information:\n" << *channel1 << "\n";
 
     channel1->subscribe();
     channel1->publishVideo("Rezolvari bac");
     channel1->publishVideo("Boomba");
 
-    std::cout << "\n\ntest:\n" << *channel1 << "\n";
+    std::cout << "\n\nTest:\n" << *channel1 << "\n";
 
     return 0;
 }
