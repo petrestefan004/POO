@@ -151,7 +151,7 @@ int main() {
     channel1->publishVideo("Rezolvari bac");
     channel1->publishVideo("Boomba");
 
-    std::cout << "\n\nTest:\n" << *channel1 << "\n";
+    std::cout << "\n\ninfo:\n" << *channel1 << "\n";
 
     return 0;
 }
