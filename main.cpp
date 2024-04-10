@@ -22,7 +22,7 @@ public:
     }
     virtual ~User() = default;
 
-    ///[[nodiscard]] std::string getUsername() const { return username; }
+    //[[nodiscard]] std::string getUsername() const { return username; }
    /// [[nodiscard]] std::string getPassword() const { return password; }
 
     ///void setPassword(const std::string& pass) { password = pass; }
