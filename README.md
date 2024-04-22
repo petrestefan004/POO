@@ -1,10 +1,9 @@
 ### Canal de youtube 
 
 ### DESCRIERE
-Simularea administrarii unui canal de youtube, intr-o versiune foarte rudimentara.
+Simularea unei aplicatii de tip youtube, care contine clasele App, user, channel, musicchannel si are diverse functionalitati, precum creerea unui playlist sau a da subscribe/ unsubscribe.  
 
 
-O cerință nu se consideră îndeplinită dacă este realizată doar ca o serie de apeluri proxy către cod generat.
 
 ### Cerințe modele de limbaj la nivel de semestru
 - [ ] minim o funcționalitate majoritar doar cu LLM
