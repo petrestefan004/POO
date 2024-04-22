@@ -17,9 +17,28 @@ public:
     User& operator=(const User& other) = default;
     virtual ~User() = default;
 
+    void encryptPassword(int shift) {
+        for (char& c : password) {
+            if (isalpha(c)) {
+                c = static_cast<char>((c + shift - 'a') % 26 + 'a');
+            }
+        }
+    }
+    void decryptPassword(int shift) {
+        for (char& c : password) {
+            if (isalpha(c)) {
+                c = static_cast<char>((c - shift - 'a' + 26) % 26 + 'a');
+            }
+        }
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const User& user) {
         os << "Username: " << user.username;
         return os;
+    }
+
+    static std::string getPassword() {
+        return "********"; // Placeholder for password retrieval
     }
 };
 
@@ -192,6 +211,9 @@ int main() {
     User owner("Ionut");
     MusicChannel musicChannel("Luna_Amara", &owner);
 
+    musicChannel.setLabel("Independent_Music");
+    std::cout<<musicChannel.getLabel();
+
     musicChannel.addSong("Gri_Dorian");
     musicChannel.addSong("Rosu_Aprins");
     musicChannel.addSong("Dizident");
@@ -207,6 +229,17 @@ int main() {
     musicChannel.displayPlaylist();
     std::cout << "\nFavorite songs:\n";
     musicChannel.displayFavorites();
+
+    User user("username", "password");
+
+    std::cout << "Original password: " << user << " - " << User::getPassword() << std::endl;
+
+
+    user.encryptPassword(3);
+    std::cout << "Encrypted password: " << user << " - " << User::getPassword() << std::endl;
+
+    user.decryptPassword(3);
+    std::cout << "Decrypted password: " << user << " - " << User::getPassword() << std::endl;
 
     return 0;
 }
