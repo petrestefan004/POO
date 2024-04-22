@@ -188,7 +188,7 @@ int main() {
     ytApp.addChannel("Specii", user2);
 
     std::cout << "User Information:\n" << user1 << "\n\n";
-    for (auto& channel : ytApp.getChannels()) {
+    for (const auto& channel : ytApp.getChannels()) {
         std::cout << "Channel Information:\n" << *channel << "\n\n";
     }
 
