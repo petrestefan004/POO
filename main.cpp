@@ -2,6 +2,7 @@
 #include <utility>
 #include <vector>
 #include <string>
+#include <stdexcept>
 
 class User {
 private:
@@ -9,23 +10,12 @@ private:
 protected:
     std::string username;
 public:
-    User() =default;
-    explicit User(std::string  usern) :  username(std::move(usern)) {}
-    User(std::string  pass, std::string  usern) : password(std::move(pass)), username(std::move(usern)) {}
-    User(const User& other)  = default;
-    User& operator=(const User& other) {
-        if (this != &other) {
-            password = other.password;
-            username = other.username;
-        }
-        return *this;
-    }
+    User() = default;
+    explicit User(std::string usern) : username(std::move(usern)) {}
+    User(std::string pass, std::string usern) : password(std::move(pass)), username(std::move(usern)) {}
+    User(const User& other) = default;
+    User& operator=(const User& other) = default;
     virtual ~User() = default;
-
-    //[[nodiscard]] std::string getUsername() const { return username; }
-   /// [[nodiscard]] std::string getPassword() const { return password; }
-
-    ///void setPassword(const std::string& pass) { password = pass; }
 
     friend std::ostream& operator<<(std::ostream& os, const User& user) {
         os << "Username: " << user.username;
@@ -41,21 +31,10 @@ private:
 protected:
     User* owner;
 public:
-    Channel(std::string  channelName, User* ownerPtr) : subCount(0), videos(), channelName(std::move(channelName)), owner(ownerPtr) {}
-    Channel(const Channel& other) : subCount(other.subCount), videos(other.videos), channelName(other.channelName), owner(new User(*other.owner)) {}
-    Channel& operator=(const Channel& other) {
-        if (this != &other) {
-            subCount = other.subCount;
-            videos = other.videos;
-            channelName = other.channelName;
-            delete owner;
-            owner = new User(*other.owner);
-        }
-        return *this;
-    }
-    virtual ~Channel() {
-        delete owner;
-    }
+    Channel(std::string channelName, User* ownerPtr) : subCount(0), videos(), channelName(std::move(channelName)), owner(ownerPtr) {}
+    Channel(const Channel& other) = delete;
+    Channel& operator=(const Channel& other) = delete;
+    virtual ~Channel() = default;
 
     friend std::ostream& operator<<(std::ostream& os, const Channel& channel) {
         os << "Channel Name: " << channel.channelName << '\n';
@@ -87,31 +66,19 @@ private:
     std::vector<std::string> playlist;
     std::vector<std::string> favorites;
 public:
-    MusicChannel(const std::string& channelName, User* ownerPtr) : Channel(channelName, ownerPtr),  songs(), playlist(), favorites() {}
+    MusicChannel(const std::string& channelName, User* ownerPtr) : Channel(channelName, ownerPtr), songs(), playlist(), favorites() {}
 
-    MusicChannel(const MusicChannel& other) = default;
-
-    MusicChannel& operator=(const MusicChannel& other) {
-        if (this != &other) {
-            Channel::operator=(other);
-            musicLabel = other.musicLabel;
-            songs = other.songs;
-            playlist = other.playlist;
-            favorites = other.favorites;
-        }
-        return *this;
-    }
+    MusicChannel(const MusicChannel& other) = delete;
+    MusicChannel& operator=(const MusicChannel& other) = delete;
 
     [[maybe_unused]] [[nodiscard]] std::string getLabel() const { return musicLabel; }
 
     [[maybe_unused]] void setLabel(const std::string& label) { musicLabel = label; }
 
-    // Add a song to the channel
     void addSong(const std::string& song) {
         songs.push_back(song);
     }
 
-    // Add a song to the playlist
     void addToPlaylist(const std::string& song) {
         playlist.push_back(song);
     }
@@ -151,82 +118,93 @@ public:
 
 class App {
 private:
-    std::vector<User *> users;
-    std::vector<Channel *> channels;
+    std::vector<User*> users;
+    std::vector<Channel*> channels;
 public:
+
     ~App() {
-        for (auto user: users)
-            delete user;
-        for (auto channel: channels)
+        for (auto channel : channels) {
             delete channel;
+        }
+        for (auto user : users) {
+            delete user;
+        }
     }
 
-    void addUser(const std::string &username) {
+    void addUser(const std::string& username) {
+        if (username.empty()) {
+            std::cerr << "Error: Username cannot be empty." << std::endl;
+            return;
+        }
         users.push_back(new User(username));
     }
 
-    void addChannel(const std::string &channelName, User *owner) {
-        channels.push_back(new Channel(channelName, owner));
+    void addChannel(const std::string& channelName, const User& owner) {
+        users.push_back(new User(owner));
+        channels.push_back(new Channel(channelName, users.back()));
     }
 
-    [[nodiscard]] User *getUser(size_t index) const {
-        if (index < users.size())
-            return users[index];
-        return nullptr;
+    [[nodiscard]] const User& getUser(size_t index) const {
+        if (index < users.size()) {
+            return *users[index];
+        }
+        throw std::out_of_range("User index out of range");
     }
 
-
-    [[maybe_unused]] [[nodiscard]] const std::vector<User *> &getUsers() const {
-        return users;
-    }
-
-
-    [[nodiscard]] const std::vector<Channel *> &getChannels() const {
+    [[nodiscard]] const std::vector<Channel*>& getChannels() const {
         return channels;
     }
 };
+
 int main() {
     App ytApp;
 
     ytApp.addUser("stefan");
     ytApp.addUser("dragonuak47");
 
-    User* user1 = ytApp.getUser(0);
-    User* user2 = ytApp.getUser(1);
+    const User& user1 = ytApp.getUser(0);
+    const User& user2 = ytApp.getUser(1);
 
     ytApp.addChannel("stefanpetre", user1);
     ytApp.addChannel("Specii", user2);
 
-    std::cout << "User Information:\n" << *user1 << "\n\n";
-    std::cout << "Channel Information:\n" << *(ytApp.getChannels()[0]) << "\n";
+    std::cout << "User Information:\n" << user1 << "\n\n";
+    for (const auto& channel : ytApp.getChannels()) {
+        std::cout << "Channel Information:\n" << *channel << "\n\n";
+    }
 
-    for(int i=0;i<5;i++)
-        ytApp.getChannels()[0]->subscribe();
-    ytApp.getChannels()[0]->unsubscribe();
-    ytApp.getChannels()[0]->publishVideo("Rezolvari bac");
-    ytApp.getChannels()[0]->publishVideo("Boomba");
+    auto channels = ytApp.getChannels();
+    if (!channels.empty()) {
+        Channel* firstChannel = channels[0];
+        for (int i = 0; i < 5; ++i) {
+            firstChannel->subscribe();
+        }
+        firstChannel->unsubscribe();
+        firstChannel->publishVideo("Rezolvari_bac");
+        firstChannel->publishVideo("Boomba");
 
-    std::cout << "\n\nAfter Subscribing:\n" << *(ytApp.getChannels()[0]) << "\n";
 
+        std::cout << "After Subscribing:\n" << *firstChannel << "\n\n";
+    } else {
+        std::cout << "No channels available.\n\n";
+    }
 
     User owner("Ionut");
-    MusicChannel musicChannel("Luna Amara", &owner);
+    MusicChannel musicChannel("Luna_Amara", &owner);
 
-    musicChannel.addSong("Gri Dorian");
-    musicChannel.addSong("Rosu Aprins");
+    musicChannel.addSong("Gri_Dorian");
+    musicChannel.addSong("Rosu_Aprins");
     musicChannel.addSong("Dizident");
 
-    musicChannel.addToPlaylist("Rosu Aprins");
-    musicChannel.addToPlaylist("Gri Dorian");
+    musicChannel.addToPlaylist("Rosu_Aprins");
+    musicChannel.addToPlaylist("Gri_Dorian");
 
     musicChannel.markFavorite("Dizident");
 
     std::cout << "All songs:\n";
     musicChannel.displaySongs();
-
     std::cout << "\nPlaylist:\n";
     musicChannel.displayPlaylist();
-
     std::cout << "\nFavorite songs:\n";
     musicChannel.displayFavorites();
 
