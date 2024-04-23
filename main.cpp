@@ -38,7 +38,7 @@ public:
     }
 
     static std::string getPassword() {
-        return "********"; // Placeholder for password retrieval
+        return "********";
     }
 };
 
@@ -170,11 +170,11 @@ public:
         throw std::out_of_range("User index out of range");
     }
 
-    [[nodiscard]] const std::vector<Channel*>& getChannels() const {
-        return channels;
-    }
+    [[nodiscard]] const std::vector<Channel*>& getChannels() const;
 };
-
+[[nodiscard]] const std::vector<Channel*>& App::getChannels() const { // Definition
+    return channels;
+}
 int main() {
     App ytApp;
 
@@ -212,7 +212,7 @@ int main() {
     MusicChannel musicChannel("Luna_Amara", &owner);
 
     musicChannel.setLabel("Independent_Music");
-    std::cout<<musicChannel.getLabel();
+    std::cout<<"Label: "<<musicChannel.getLabel()<<"\n";
 
     musicChannel.addSong("Gri_Dorian");
     musicChannel.addSong("Rosu_Aprins");
@@ -221,7 +221,7 @@ int main() {
     musicChannel.addToPlaylist("Rosu_Aprins");
     musicChannel.addToPlaylist("Gri_Dorian");
 
-    musicChannel.markFavorite("Dizident");
+    musicChannel.markFavorite("Rosu_Aprins");
 
     std::cout << "All songs:\n";
     musicChannel.displaySongs();
@@ -229,8 +229,9 @@ int main() {
     musicChannel.displayPlaylist();
     std::cout << "\nFavorite songs:\n";
     musicChannel.displayFavorites();
+    std::cout<<"\n\n";
 
-    User user("username", "password");
+    User user("andrei12321", "parolaoriginala");
 
     std::cout << "Original password: " << user << " - " << User::getPassword() << std::endl;
 
