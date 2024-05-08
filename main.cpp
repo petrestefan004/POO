@@ -3,6 +3,12 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
+#include <digestpp.hpp>
+
+class PasswordManager{
+
+
+};
 
 class User {
 private:
@@ -17,28 +23,9 @@ public:
     User& operator=(const User& other) = default;
     virtual ~User() = default;
 
-    void encryptPassword(int shift) {
-        for (char& c : password) {
-            if (isalpha(c)) {
-                c = static_cast<char>((c + shift - 'a') % 26 + 'a');
-            }
-        }
-    }
-    void decryptPassword(int shift) {
-        for (char& c : password) {
-            if (isalpha(c)) {
-                c = static_cast<char>((c - shift - 'a' + 26) % 26 + 'a');
-            }
-        }
-    }
-
     friend std::ostream& operator<<(std::ostream& os, const User& user) {
         os << "Username: " << user.username;
         return os;
-    }
-
-    static std::string getPassword() {
-        return "********";
     }
 };
 
@@ -148,6 +135,7 @@ public:
         for (auto user : users) {
             delete user;
         }
+        std::cout<<"Delete App";
     }
 
     void addUser(const std::string& username) {
@@ -172,7 +160,7 @@ public:
 
     [[nodiscard]] const std::vector<Channel*>& getChannels() const;
 };
-[[nodiscard]] const std::vector<Channel*>& App::getChannels() const { // Definition
+[[nodiscard]] const std::vector<Channel*>& App::getChannels() const {
     return channels;
 }
 int main() {
@@ -189,7 +177,7 @@ int main() {
 
     std::cout << "User Information:\n" << user1 << "\n\n";
 
-    /* */for (const auto& channel : ytApp.getChannels()) {
+    for (const auto& channel : ytApp.getChannels()) {
         std::cout << "Channel Information:\n" << *channel << "\n\n";
     }
 
@@ -233,15 +221,6 @@ int main() {
     std::cout<<"\n\n";
 
     User user("andrei12321", "parolaoriginala");
-
-    std::cout << "Original password: " << user << " - " << User::getPassword() << std::endl;
-
-
-    user.encryptPassword(3);
-    std::cout << "Encrypted password: " << user << " - " << User::getPassword() << std::endl;
-
-    user.decryptPassword(3);
-    std::cout << "Decrypted password: " << user << " - " << User::getPassword() << std::endl;
 
     return 0;
 }

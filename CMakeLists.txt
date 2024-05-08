@@ -94,7 +94,27 @@ endfunction()
 
 # NOTE: update executable name in .github/workflows/cmake.yml:25 when changing name here
 add_executable(${PROJECT_NAME} main.cpp
-        generated/src/Helper.cpp)
+        generated/src/Helper.cpp
+        ext/include/digestpp/digestpp.hpp
+        ext/include/digestpp/hasher.hpp
+        ext/include/digestpp/algorithm/blake.hpp
+        ext/include/digestpp/algorithm/blake2.hpp
+        ext/include/digestpp/algorithm/echo.hpp
+        ext/include/digestpp/algorithm/esch.hpp
+        ext/include/digestpp/algorithm/groestl.hpp
+        ext/include/digestpp/algorithm/jh.hpp
+        ext/include/digestpp/algorithm/k12m14.hpp
+        ext/include/digestpp/algorithm/kmac.hpp
+        ext/include/digestpp/algorithm/kupyna.hpp
+        ext/include/digestpp/algorithm/md5.hpp
+        ext/include/digestpp/algorithm/sha1.hpp
+        ext/include/digestpp/algorithm/sha2.hpp
+        ext/include/digestpp/algorithm/sha3.hpp
+        ext/include/digestpp/algorithm/shake.hpp
+        ext/include/digestpp/algorithm/skein.hpp
+        ext/include/digestpp/algorithm/sm3.hpp
+        ext/include/digestpp/algorithm/streebog.hpp
+        ext/include/digestpp/algorithm/whirlpool.hpp)
 
 ###############################################################################
 
