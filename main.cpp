@@ -4,7 +4,6 @@
 #include <string>
 #include <stdexcept>
 #include <digestpp.hpp>
-
 class PasswordManager{
 
 
