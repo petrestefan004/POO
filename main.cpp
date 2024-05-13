@@ -173,7 +173,7 @@ public:
         std::cout<<"Delete App";
     }
 
-    [[maybe_unused]] void signup()
+     void signup()
     {
         std::cout<<"Welcome! Create a new account!\n";
         std::cout<<"Username:";
@@ -187,7 +187,7 @@ public:
         users.push_back(newuser);
     }
 
-    [[maybe_unused]] static bool login(){
+    static bool login(){
         std::cout<<"Welcome back! Please log in!\n";
         std::cout<<"Username:";
         std::string username, password;
@@ -247,7 +247,7 @@ int main() {
 
     std::cout << "User Information:\n" << user1 << "\n\n";
 
-    for (const auto& channel : ytApp.getChannels()) {
+    for (auto channel : ytApp.getChannels()) {
         std::cout << "Channel Information:\n" << *channel << "\n\n";
     }
 
