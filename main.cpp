@@ -187,6 +187,21 @@ public:
         users.push_back(newuser);
     }
 
+    [[maybe_unused]] static bool login(){
+        std::cout<<"Welcome back! Please log in!\n";
+        std::cout<<"Username:";
+        std::string username, password;
+        std::cin>>username;
+        std::cout<<"Password:";
+        std::cin>>password;
+        std::string salt= PasswordManager::make_salt();
+        std::string hashedpassword=PasswordManager::hash_password(password, salt);
+        User newposibleuser = User(hashedpassword, username, salt);
+        if(!newposibleuser.CheckLogin(username, password))
+            return false;
+        else return true;
+
+    }
 
     void addUser(const std::string& username) {
         if (username.empty()) {
@@ -218,6 +233,9 @@ public:
 int main() {
     App ytApp;
     ytApp.signup();
+    bool exista=App::login();
+    std::cout<<exista<<"\n";
+
     ytApp.addUser("stefan");
     ytApp.addUser("dragonuak47");
 
