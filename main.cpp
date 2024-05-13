@@ -4,20 +4,35 @@
 #include <string>
 #include <stdexcept>
 #include <digestpp.hpp>
-class PasswordManager{
 
+class PasswordManager {
+public:
+    static std::string make_salt() {
+        static uint64_t nr = 1u;
+        std::string salt;
+        auto bytes = reinterpret_cast<char*>(&nr);
+        for(unsigned i = 0; i < 16; i++) {
+            salt += bytes[i%8];
+        }
+        ++nr;
+        return salt;
+    }
 
+    static std::string hash_password(const std::string& plain, const std::string& salt) {
+        return digestpp::blake2b(512).set_salt(salt).absorb(plain).hexdigest();
+    }
 };
 
 class User {
 private:
     std::string password;
+    std::string salt;
 protected:
     std::string username;
 public:
     User() = default;
     explicit User(std::string usern) : username(std::move(usern)) {}
-    User(std::string pass, std::string usern) : password(std::move(pass)), username(std::move(usern)) {}
+    User(std::string pass, std::string usern, std::string sare) : password(std::move(pass)), salt(std::move(sare)) ,username(std::move(usern)){}
     User(const User& other) = default;
     User& operator=(const User& other) = default;
     virtual ~User() = default;
@@ -25,6 +40,11 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const User& user) {
         os << "Username: " << user.username;
         return os;
+    }
+
+    [[maybe_unused]] [[nodiscard]] bool CheckLogin(const std::string& username_, const std::string& _password)const{
+        std::string Hashedpassword = PasswordManager::hash_password(_password, salt);
+        return (username==username_ && password==Hashedpassword);
     }
 };
 
@@ -126,6 +146,22 @@ private:
     std::vector<User*> users;
     std::vector<Channel*> channels;
 public:
+    App()=default;
+
+    App(const App& other)= default;
+
+    App& operator=(const App& other)
+    {
+        if(this != &other)
+        {
+            users=other.users;
+            channels=other.channels;
+        }
+        return *this;
+    }
+
+    [[maybe_unused]] App(const std::vector<User*>& _users, const std::vector<Channel*>& _channels)
+        : users(_users), channels(_channels) {}
 
     ~App() {
         for (auto channel : channels) {
@@ -137,6 +173,21 @@ public:
         std::cout<<"Delete App";
     }
 
+    [[maybe_unused]] void signup()
+    {
+        std::cout<<"Welcome! Create a new account!\n";
+        std::cout<<"Username:";
+        std::string username, password;
+        std::cin>>username;
+        std::cout<<"Password:";
+        std::cin>>password;
+        std::string salt=PasswordManager::make_salt();
+        std::string hashedPassword= PasswordManager::hash_password(password, salt);
+        User *newuser= new User(hashedPassword, username, salt);
+        users.push_back(newuser);
+    }
+
+
     void addUser(const std::string& username) {
         if (username.empty()) {
             std::cerr << "Error: Username cannot be empty." << std::endl;
@@ -144,6 +195,8 @@ public:
         }
         users.push_back(new User(username));
     }
+
+
 
     void addChannel(const std::string& channelName, const User& owner) {
         users.push_back(new User(owner));
@@ -164,7 +217,7 @@ public:
 }
 int main() {
     App ytApp;
-
+    ytApp.signup();
     ytApp.addUser("stefan");
     ytApp.addUser("dragonuak47");
 
@@ -219,7 +272,6 @@ int main() {
     musicChannel.displayFavorites();
     std::cout<<"\n\n";
 
-    User user("andrei12321", "parolaoriginala");
 
     return 0;
 }
