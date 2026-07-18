@@ -49,11 +49,10 @@ public:
 };
 
 class Channel {
-private:
+protected:
     int subCount;
     std::vector<std::string> videos;
     std::string channelName;
-protected:
     User* owner;
 public:
     Channel(std::string channelName, User* ownerPtr) : subCount(0), videos(), channelName(std::move(channelName)), owner(ownerPtr) {}
@@ -64,7 +63,10 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const Channel& channel) {
         os << "Channel Name: " << channel.channelName << '\n';
         os << "Subscriber Count: " << channel.subCount << '\n';
-        os << "Owner: " << *(channel.owner);
+        if (channel.owner) {
+            os << "Owner: " << *(channel.owner) << '\n';
+        }
+        channel.printExtra(os);
         return os;
     }
 
@@ -77,11 +79,50 @@ public:
             subCount--;
     }
 
-    void publishVideo(const std::string& title) {
+    virtual void publishVideo(const std::string& title) {
         videos.push_back(title);
     }
 
+    virtual void displayChannelType() const = 0;
+
+    virtual void printExtra(std::ostream& os) const = 0;
+
     [[nodiscard]] std::string getChannelName() const { return channelName; }
+};
+
+class GeneralChannel : public Channel {
+public:
+    GeneralChannel(const std::string& channelName, User* ownerPtr) : Channel(channelName, ownerPtr) {}
+
+    void displayChannelType() const override {
+        std::cout << "Channel Type: General\n";
+    }
+
+    void printExtra(std::ostream& os) const override {
+        os << "Channel Type: General\n";
+    }
+};
+
+class GamingChannel : public Channel {
+private:
+    std::string favoriteGame;
+public:
+    GamingChannel(const std::string& channelName, User* ownerPtr, std::string favoriteGame)
+        : Channel(channelName, ownerPtr), favoriteGame(std::move(favoriteGame)) {}
+
+    void displayChannelType() const override {
+        std::cout << "Channel Type: Gaming\n";
+        std::cout << "Favorite Game: " << favoriteGame << "\n";
+    }
+
+    void printExtra(std::ostream& os) const override {
+        os << "Channel Type: Gaming\n";
+        os << "Favorite Game: " << favoriteGame << "\n";
+    }
+
+    void publishVideo(const std::string& title) override {
+        Channel::publishVideo("[Gaming] " + title);
+    }
 };
 
 class MusicChannel : public Channel {
@@ -100,8 +141,22 @@ public:
 
     [[maybe_unused]] void setLabel(const std::string& label) { musicLabel = label; }
 
+    void displayChannelType() const override {
+        std::cout << "Channel Type: Music\n";
+    }
+
+    void printExtra(std::ostream& os) const override {
+        os << "Channel Type: Music\n";
+        os << "Label: " << musicLabel << '\n';
+    }
+
+    void publishVideo(const std::string& title) override {
+        Channel::publishVideo("[Music] " + title);
+    }
+
     void addSong(const std::string& song) {
         songs.push_back(song);
+        publishVideo(song);
     }
 
     void addToPlaylist(const std::string& song) {
@@ -170,7 +225,7 @@ public:
         for (auto user : users) {
             delete user;
         }
-        std::cout<<"Delete App";
+        std::cout<<"Delete App\n";
     }
 
      void signup()
@@ -211,16 +266,13 @@ public:
         users.push_back(new User(username));
     }
 
-
-
-    void addChannel(const std::string& channelName, const User& owner) {
-        users.push_back(new User(owner));
-        channels.push_back(new Channel(channelName, users.back()));
+    void addChannel(Channel* channel) {
+        channels.push_back(channel);
     }
 
-    [[nodiscard]] const User& getUser(size_t index) const {
+    [[nodiscard]] User* getUser(size_t index) const {
         if (index < users.size()) {
-            return *users[index];
+            return users[index];
         }
         throw std::out_of_range("User index out of range");
     }
@@ -238,17 +290,27 @@ int main() {
 
     ytApp.addUser("stefan");
     ytApp.addUser("dragonuak47");
+    ytApp.addUser("ionut");
 
-    const User& user1 = ytApp.getUser(0);
-    const User& user2 = ytApp.getUser(1);
+    User* user1 = ytApp.getUser(0);
+    User* user2 = ytApp.getUser(1);
+    User* user3 = ytApp.getUser(2);
 
-    ytApp.addChannel("stefanpetre", user1);
-    ytApp.addChannel("Specii", user2);
+    ytApp.addChannel(new GeneralChannel("stefanpetre", user1));
+    ytApp.addChannel(new GamingChannel("Specii", user2, "CS:GO"));
 
-    std::cout << "User Information:\n" << user1 << "\n\n";
-     //cppcheck-suppress [constVariable]
+    MusicChannel* musicChannel = new MusicChannel("Luna_Amara", user3);
+    musicChannel->setLabel("Independent_Music");
+    musicChannel->addSong("Gri_Dorian");
+    musicChannel->addSong("Rosu_Aprins");
+    ytApp.addChannel(musicChannel);
+
+    std::cout << "User Information:\n" << *user1 << "\n\n";
+
     for (const auto channel : ytApp.getChannels()) {
-        std::cout << "Channel Information:\n" << *channel << "\n\n";
+        std::cout << "Channel Information:\n" << *channel << "\n";
+        channel->displayChannelType();
+        std::cout << "\n";
     }
 
     auto channels = ytApp.getChannels();
@@ -261,35 +323,10 @@ int main() {
         firstChannel->publishVideo("Rezolvari_bac");
         firstChannel->publishVideo("Boomba");
 
-
-        std::cout << "After Subscribing:\n" << *firstChannel << "\n\n";
+        std::cout << "After Subscribing & Publishing Video:\n" << *firstChannel << "\n\n";
     } else {
         std::cout << "No channels available.\n\n";
     }
-
-    User owner("Ionut");
-    MusicChannel musicChannel("Luna_Amara", &owner);
-
-    musicChannel.setLabel("Independent_Music");
-    std::cout<<"Label: "<<musicChannel.getLabel()<<"\n";
-
-    musicChannel.addSong("Gri_Dorian");
-    musicChannel.addSong("Rosu_Aprins");
-    musicChannel.addSong("Dizident");
-
-    musicChannel.addToPlaylist("Rosu_Aprins");
-    musicChannel.addToPlaylist("Gri_Dorian");
-
-    musicChannel.markFavorite("Rosu_Aprins");
-
-    std::cout << "All songs:\n";
-    musicChannel.displaySongs();
-    std::cout << "\nPlaylist:\n";
-    musicChannel.displayPlaylist();
-    std::cout << "\nFavorite songs:\n";
-    musicChannel.displayFavorites();
-    std::cout<<"\n\n";
-
 
     return 0;
 }
