@@ -10,7 +10,7 @@ public:
     static std::string make_salt() {
         static uint64_t nr = 1u;
         std::string salt;
-        auto bytes = reinterpret_cast<char*>(&nr);
+        auto bytes = reinterpret_cast<const char*>(&nr);
         for(unsigned i = 0; i < 16; i++) {
             salt += bytes[i%8];
         }
@@ -291,7 +291,7 @@ public:
             }
         }
 
-        while (true) {
+        while (currentUser != nullptr) {
             std::cout << "\n=== Dashboard ===\n";
             std::cout << "Welcome, " << *currentUser << "!\n";
             std::cout << "1. View All Channels\n";
@@ -354,8 +354,25 @@ int main() {
 
     MusicChannel* musicChannel = new MusicChannel("Luna_Amara", user3);
     musicChannel->setLabel("Independent_Music");
+    std::cout << "Music Channel Label: " << musicChannel->getLabel() << "\n";
+
     musicChannel->addSong("Gri_Dorian");
     musicChannel->addSong("Rosu_Aprins");
+    musicChannel->addSong("Dizident");
+
+    musicChannel->addToPlaylist("Rosu_Aprins");
+    musicChannel->addToPlaylist("Gri_Dorian");
+
+    musicChannel->markFavorite("Rosu_Aprins");
+
+    std::cout << "\nAll songs:\n";
+    musicChannel->displaySongs();
+    std::cout << "\nPlaylist:\n";
+    musicChannel->displayPlaylist();
+    std::cout << "\nFavorite songs:\n";
+    musicChannel->displayFavorites();
+    std::cout << "\n\n";
+
     ytApp.addChannel(musicChannel);
 
     auto channels = ytApp.getChannels();
@@ -364,6 +381,7 @@ int main() {
         for (int i = 0; i < 5; ++i) {
             firstChannel->subscribe();
         }
+        firstChannel->unsubscribe();
         firstChannel->publishVideo("Rezolvari_bac", "https://youtube.com/watch?v=12345");
         firstChannel->publishVideo("Boomba", "https://youtube.com/watch?v=67890");
     }
