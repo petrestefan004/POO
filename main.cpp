@@ -48,10 +48,15 @@ public:
     }
 };
 
+struct Video {
+    std::string title;
+    std::string link;
+};
+
 class Channel {
 protected:
     int subCount;
-    std::vector<std::string> videos;
+    std::vector<Video> videos;
     std::string channelName;
     User* owner;
 public:
@@ -67,6 +72,10 @@ public:
             os << "Owner: " << *(channel.owner) << '\n';
         }
         channel.printExtra(os);
+        os << "Videos:\n";
+        for (const auto& video : channel.videos) {
+            os << "- " << video.title << " (" << video.link << ")\n";
+        }
         return os;
     }
 
@@ -79,8 +88,8 @@ public:
             subCount--;
     }
 
-    virtual void publishVideo(const std::string& title) {
-        videos.push_back(title);
+    virtual void publishVideo(const std::string& title, const std::string& link) {
+        videos.push_back({title, link});
     }
 
     virtual void displayChannelType() const = 0;
@@ -120,8 +129,8 @@ public:
         os << "Favorite Game: " << favoriteGame << "\n";
     }
 
-    void publishVideo(const std::string& title) override {
-        Channel::publishVideo("[Gaming] " + title);
+    void publishVideo(const std::string& title, const std::string& link) override {
+        Channel::publishVideo("[Gaming] " + title, link);
     }
 };
 
@@ -150,13 +159,13 @@ public:
         os << "Label: " << musicLabel << '\n';
     }
 
-    void publishVideo(const std::string& title) override {
-        Channel::publishVideo("[Music] " + title);
+    void publishVideo(const std::string& title, const std::string& link) override {
+        Channel::publishVideo("[Music] " + title, link);
     }
 
     void addSong(const std::string& song) {
         songs.push_back(song);
-        publishVideo(song);
+        publishVideo(song, "https://youtube.com/watch?v=" + song);
     }
 
     void addToPlaylist(const std::string& song) {
@@ -200,6 +209,7 @@ class App {
 private:
     std::vector<User*> users;
     std::vector<Channel*> channels;
+    static User* currentUser;
 public:
     App()=default;
 
@@ -231,31 +241,73 @@ public:
      void signup()
     {
         std::cout<<"Welcome! Create a new account!\n";
-        std::cout<<"Username:";
+        std::cout<<"Username: ";
         std::string username, password;
         std::cin>>username;
-        std::cout<<"Password:";
+        std::cout<<"Password: ";
         std::cin>>password;
         std::string salt=PasswordManager::make_salt();
         std::string hashedPassword= PasswordManager::hash_password(password, salt);
         User *newuser= new User(hashedPassword, username, salt);
         users.push_back(newuser);
+        std::cout << "Account created successfully.\n";
     }
 
-    static bool login(){
+    bool login(){
         std::cout<<"Welcome back! Please log in!\n";
-        std::cout<<"Username:";
+        std::cout<<"Username: ";
         std::string username, password;
         std::cin>>username;
-        std::cout<<"Password:";
+        std::cout<<"Password: ";
         std::cin>>password;
-        std::string salt= PasswordManager::make_salt();
-        std::string hashedpassword=PasswordManager::hash_password(password, salt);
-        User newposibleuser = User(hashedpassword, username, salt);
-        if(!newposibleuser.CheckLogin(username, password))
-            return false;
-        else return true;
 
+        for (auto user : users) {
+            if (user->CheckLogin(username, password)) {
+                currentUser = user;
+                std::cout << "Login successful.\n";
+                return true;
+            }
+        }
+        std::cout << "Invalid username or password.\n";
+        return false;
+    }
+
+    void run() {
+        int choice;
+        while (currentUser == nullptr) {
+            std::cout << "\n=== YouTube App ===\n";
+            std::cout << "1. Register\n";
+            std::cout << "2. Login\n";
+            std::cout << "3. Exit\n";
+            std::cout << "Enter choice: ";
+            if (!(std::cin >> choice)) break;
+
+            if (choice == 1) {
+                signup();
+            } else if (choice == 2) {
+                login();
+            } else if (choice == 3) {
+                return;
+            }
+        }
+
+        while (true) {
+            std::cout << "\n=== Dashboard ===\n";
+            std::cout << "Welcome, " << *currentUser << "!\n";
+            std::cout << "1. View All Channels\n";
+            std::cout << "2. Exit\n";
+            std::cout << "Enter choice: ";
+            if (!(std::cin >> choice)) break;
+
+            if (choice == 1) {
+                for (const auto channel : getChannels()) {
+                    std::cout << "\nChannel Information:\n" << *channel << "\n";
+                    channel->displayChannelType();
+                }
+            } else if (choice == 2) {
+                break;
+            }
+        }
     }
 
     void addUser(const std::string& username) {
@@ -282,12 +334,13 @@ public:
 [[nodiscard]] const std::vector<Channel*>& App::getChannels() const {
     return channels;
 }
+
+User* App::currentUser = nullptr;
+
 int main() {
     App ytApp;
-    ytApp.signup();
-    bool exista=App::login();
-    std::cout<<exista<<"\n";
 
+    // Pre-populate some data for the user to interact with
     ytApp.addUser("stefan");
     ytApp.addUser("dragonuak47");
     ytApp.addUser("ionut");
@@ -305,28 +358,18 @@ int main() {
     musicChannel->addSong("Rosu_Aprins");
     ytApp.addChannel(musicChannel);
 
-    std::cout << "User Information:\n" << *user1 << "\n\n";
-
-    for (const auto channel : ytApp.getChannels()) {
-        std::cout << "Channel Information:\n" << *channel << "\n";
-        channel->displayChannelType();
-        std::cout << "\n";
-    }
-
     auto channels = ytApp.getChannels();
     if (!channels.empty()) {
         Channel* firstChannel = channels[0];
         for (int i = 0; i < 5; ++i) {
             firstChannel->subscribe();
         }
-        firstChannel->unsubscribe();
-        firstChannel->publishVideo("Rezolvari_bac");
-        firstChannel->publishVideo("Boomba");
-
-        std::cout << "After Subscribing & Publishing Video:\n" << *firstChannel << "\n\n";
-    } else {
-        std::cout << "No channels available.\n\n";
+        firstChannel->publishVideo("Rezolvari_bac", "https://youtube.com/watch?v=12345");
+        firstChannel->publishVideo("Boomba", "https://youtube.com/watch?v=67890");
     }
+
+    // Run the interactive GUI loop
+    ytApp.run();
 
     return 0;
 }
