@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
+#include <algorithm>
 #include <digestpp.hpp>
 
 class PasswordManager {
@@ -173,11 +174,11 @@ public:
     }
 
     void markFavorite(const std::string& song) {
-        for (const auto& s : playlist) {
-            if (s == song) {
-                favorites.push_back(s);
-                break;
-            }
+        auto it = std::find_if(playlist.begin(), playlist.end(), [&song](const std::string& s) {
+            return s == song;
+        });
+        if (it != playlist.end()) {
+            favorites.push_back(*it);
         }
     }
 
@@ -261,51 +262,54 @@ public:
         std::cout<<"Password: ";
         std::cin>>password;
 
-        for (auto user : users) {
-            if (user->CheckLogin(username, password)) {
-                currentUser = user;
-                std::cout << "Login successful.\n";
-                return true;
-            }
+        auto it = std::find_if(users.begin(), users.end(), [&username, &password](const User* user) {
+            return user->CheckLogin(username, password);
+        });
+
+        if (it != users.end()) {
+            currentUser = *it;
+            std::cout << "Login successful.\n";
+            return true;
         }
+
         std::cout << "Invalid username or password.\n";
         return false;
     }
 
     void run() {
         int choice;
-        while (currentUser == nullptr) {
-            std::cout << "\n=== YouTube App ===\n";
-            std::cout << "1. Register\n";
-            std::cout << "2. Login\n";
-            std::cout << "3. Exit\n";
-            std::cout << "Enter choice: ";
-            if (!(std::cin >> choice)) break;
+        while (true) {
+            if (currentUser == nullptr) {
+                std::cout << "\n=== YouTube App ===\n";
+                std::cout << "1. Register\n";
+                std::cout << "2. Login\n";
+                std::cout << "3. Exit\n";
+                std::cout << "Enter choice: ";
+                if (!(std::cin >> choice)) break;
 
-            if (choice == 1) {
-                signup();
-            } else if (choice == 2) {
-                login();
-            } else if (choice == 3) {
-                return;
-            }
-        }
-
-        while (currentUser != nullptr) {
-            std::cout << "\n=== Dashboard ===\n";
-            std::cout << "Welcome, " << *currentUser << "!\n";
-            std::cout << "1. View All Channels\n";
-            std::cout << "2. Exit\n";
-            std::cout << "Enter choice: ";
-            if (!(std::cin >> choice)) break;
-
-            if (choice == 1) {
-                for (const auto channel : getChannels()) {
-                    std::cout << "\nChannel Information:\n" << *channel << "\n";
-                    channel->displayChannelType();
+                if (choice == 1) {
+                    signup();
+                } else if (choice == 2) {
+                    login();
+                } else if (choice == 3) {
+                    return;
                 }
-            } else if (choice == 2) {
-                break;
+            } else {
+                std::cout << "\n=== Dashboard ===\n";
+                std::cout << "Welcome, " << *currentUser << "!\n";
+                std::cout << "1. View All Channels\n";
+                std::cout << "2. Exit\n";
+                std::cout << "Enter choice: ";
+                if (!(std::cin >> choice)) break;
+
+                if (choice == 1) {
+                    for (const auto channel : getChannels()) {
+                        std::cout << "\nChannel Information:\n" << *channel << "\n";
+                        channel->displayChannelType();
+                    }
+                } else if (choice == 2) {
+                    break;
+                }
             }
         }
     }
